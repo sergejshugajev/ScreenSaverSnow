@@ -1,5 +1,7 @@
 # ScreenSaverSnow
-Screen saver "Snow" in Java. Simple implementation of the movement of snowflakes. The program is compiled as an "almost" full screen saver for the Windows platform.
+Screen saver "Snow" in Java. Simple implementation of the movement of snowflakes.
+
+The program is compiled as an "almost" full screen saver for the Windows platform.
 ![Project illustration](https://github.com/sergej-shugajev/ScreenSaverSnow/blob/master/preview.gif)
 
 ## Principle of operation
@@ -10,7 +12,7 @@ Screen saver "Snow" in Java. Simple implementation of the movement of snowflakes
 
 ## Features
 - The program is configured through the command line. Reads commands at startup as Windows skreen sowers.
-- The application can be built as EXE for Windows through the maven builder (launch4j-maven-plugin). Then rename the EXE file to SCR and place it in the Vindos directory. Then the savers are displayed in Windows screensavers. (Important! The / c switch is disabled; it does not work in Java.)
+- The application can be built as EXE for Windows through the maven builder (launch4j-maven-plugin). Then rename the EXE file to SCR and place it in the Vindos directory. Then the savers are displayed in Windows screensavers. (Important! The "/ p" switch is disabled; it does not work in Java.)
 - Snowflakes movement code is not correct on the left side. Fix failed.
 
 ## License
