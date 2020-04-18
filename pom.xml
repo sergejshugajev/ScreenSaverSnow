@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    
+    <groupId>com.shugajev</groupId>
+    <artifactId>ScreenSaverSnow</artifactId>
+    <version>0.1.0</version>
+    <packaging>jar</packaging>
+    
+    <name>Snow</name>
+    <url>https://github.com/sergej-shugajev/JavaPingLogger</url>
+    <description>Snow (Screen Saver)</description>
+    
+    <properties>
+        <jdkVersion>1.8</jdkVersion>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <appFileName>Snow</appFileName>
+        <appMainClass>Snow</appMainClass>
+        <appTitle>${project.name}</appTitle>
+        <appCompany>Sergej Shugajev</appCompany>
+        <appYear>2020</appYear>
+    </properties>
+    
+    <build>
+    <sourceDirectory>${basedir}/src</sourceDirectory>
+    <finalName>${project.artifactId}-${project.version}</finalName>
+    
+    <plugins>
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <version>3.3</version>
+            <configuration>
+                <source>${jdkVersion}</source>
+                <target>${jdkVersion}</target>
+            </configuration>
+        </plugin>
+        
+        <plugin>
+            <artifactId>maven-assembly-plugin</artifactId>
+            <configuration>
+            <descriptorRefs>
+                <descriptorRef>jar-with-dependencies</descriptorRef>
+            </descriptorRefs>
+            <outputDirectory>${basedir}</outputDirectory>
+            <finalName>${appFileName}</finalName>
+            <appendAssemblyId>false</appendAssemblyId>
+            <archive>
+            <manifest>
+                <mainClass>${appMainClass}</mainClass>
+            </manifest>
+            </archive>
+            </configuration>
+        </plugin>
+        
+        <plugin>
+        <groupId>com.akathist.maven.plugins.launch4j</groupId>
+        <artifactId>launch4j-maven-plugin</artifactId>
+        <version>1.7.25</version>
+        <executions>
+            <execution>
+                <id>l4j-clui</id>
+                <phase>package</phase>
+                <goals>
+                    <goal>launch4j</goal>
+                </goals>
+                <configuration>
+                    <headerType>gui</headerType><!-- gui | console -->
+                    <outfile>${appFileName}.exe</outfile>
+                    <jar>target/${project.build.finalName}.jar</jar>
+                    <errTitle>${appTitle}</errTitle>
+                    <supportUrl>${project.url}</supportUrl>
+                    <!-- <icon>favicon.ico</icon> -->
+                    <classPath>
+                        <mainClass>${appMainClass}</mainClass>
+                        <addDependencies>true</addDependencies>
+                        <preCp>anything</preCp>
+                    </classPath>
+                    <jre>
+                        <minVersion>${jdkVersion}.0</minVersion>
+                    </jre>
+                    <versionInfo>
+                        <fileVersion>${project.version}.0</fileVersion>
+                        <txtFileVersion>v${project.version}</txtFileVersion>
+                        <fileDescription>${project.description}</fileDescription>
+                        <copyright>Copyright © ${appCompany} ${appYear}</copyright>
+                        <productVersion>${project.version}.0</productVersion>
+                        <txtProductVersion>v${project.version}</txtProductVersion>
+                        <companyName>${appCompany}</companyName>
+                        <productName>${appTitle}</productName>
+                        <internalName>${appFileName}</internalName>
+                        <originalFilename>${appFileName}.exe</originalFilename>
+                    </versionInfo>
+                </configuration>
+            </execution>
+        </executions>
+        </plugin>
+    
+    </plugins>
+    </build>
+    
+</project>
