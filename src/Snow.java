@@ -14,7 +14,7 @@ import java.util.ArrayList;
  * Program       : Snow (Screen Saver)
  * Refactoring   : Sergej Shugajev (2020-04-17)
  * Original idea : Deepak Monster
- *               : https://www.planet-source-code.com/vb/scripts/ShowCode.asp?txtCodeId=7197
+ *               : http://www.planet-source-code.com/vb/scripts/ShowCode.asp?txtCodeId=7180
  */
 public class Snow extends JFrame {
     
