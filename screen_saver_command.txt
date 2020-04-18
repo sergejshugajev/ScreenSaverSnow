@@ -1,0 +1,21 @@
+INFO: Screen Saver Command Line Arguments
+
+Windows communicates with Screen Savers through command line arguments. The ScrnSave.lib library handles this for Screen Savers that are written to use it, but other Win32 Screen Savers marked 4.0 or higher must handle the following command line arguments:
+
+
+    ScreenSaver           - Show the Settings dialog box.
+    ScreenSaver /c        - Show the Settings dialog box, modal to the
+                            foreground window.
+    ScreenSaver /p <HWND> - Preview Screen Saver as child of window <HWND>.
+    ScreenSaver /s        - Run the Screen Saver. 
+
+In addition, Windows 95 Screen Savers must handle:
+
+
+    ScreenSaver /a <HWND> - change password, modal to window <HWND>
+
+
+<HWND> is a HWND presented on the command line as an unsigned decimal number.
+
+
+https://support.microsoft.com/ru-ru/help/182383/info-screen-saver-command-line-arguments
