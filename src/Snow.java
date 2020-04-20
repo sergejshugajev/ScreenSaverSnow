@@ -125,24 +125,18 @@ public class Snow extends JFrame {
         public void changeParticlePositions() {
             final int BORDER = 15;
             angle += 0.01; // it is in Radians
-            int i = 0;
             for (SnowParticle p : particles) {
                 p.Y += Math.cos(angle + p.D) + 2 + (p.R / 2);
-                p.X += Math.sin(angle) * 2 + 1;
+                p.X += Math.round(Math.sin(angle) * 2) + 1;
                 // just to create more randomness
-                if (p.X > w + BORDER || p.X < -BORDER || p.Y > h) {
-                    if (i % 3 > 0) {
-                        p.Y = -BORDER;
-                        p.X = (int)(Math.random() * w);
-                    } else {
-                        p.Y = (int)(Math.random() * h);
-                        if (Math.sin(angle) > 0)
-                            p.X = -BORDER;
-                        else
-                            p.X = w + BORDER;
-                    }
+                if (p.Y > h) {
+                    p.Y = -BORDER;
+                    p.X = (int)(Math.random() * w);
                 }
-                i++;
+                if (p.X > w + BORDER)
+                    p.X = -BORDER;
+                else if (p.X < -BORDER)
+                    p.X = w + BORDER;
             }
         } 
         
