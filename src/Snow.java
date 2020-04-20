@@ -20,6 +20,7 @@ public class Snow extends JFrame {
     
     Sky sky;
     Timer timer;
+    final boolean USE_ANTIALIASING = true; // render use or not antialiasing for draw
     final int MAX_PARTICLES = 150;
     final int MAX_RADIUS = 12;
     
@@ -29,10 +30,11 @@ public class Snow extends JFrame {
     public Snow() {
         setTitle("Snow");
         setUndecorated(true);
+        setExtendedState(JFrame.MAXIMIZED_BOTH);
         setSize(Toolkit.getDefaultToolkit().getScreenSize());
         add(sky = new Sky());
-        addMouseMotionListener(mouseOnMoved());
-        addKeyListener(keyOnPressed());
+        addMouseMotionListener(onMouseMoved());
+        addKeyListener(onKeyPressed());
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         hideCursor();
         setVisible(true);
@@ -50,7 +52,7 @@ public class Snow extends JFrame {
         });
     }
     
-    public KeyAdapter keyOnPressed() {
+    public KeyAdapter onKeyPressed() {
         return new KeyAdapter() {
             public void keyPressed(KeyEvent e) {
                 if (e.getID() == KeyEvent.KEY_PRESSED)
@@ -59,7 +61,7 @@ public class Snow extends JFrame {
         };
     }
     
-    public MouseAdapter mouseOnMoved() {
+    public MouseAdapter onMouseMoved() {
         return new MouseAdapter() {
             public void mouseMoved(MouseEvent e) {
                 if (oldMouseX == 0 || oldMouseY == 0) {
@@ -74,7 +76,7 @@ public class Snow extends JFrame {
     
     public void hideCursor() {
         final Toolkit tk = getToolkit();
-        final Cursor hidenCursor = tk.createCustomCursor(tk.getImage(""), new Point(), "hidenCursor");    
+        final Cursor hidenCursor = tk.createCustomCursor(tk.getImage(""), new Point(), "hidenCursor");
         this.setCursor(hidenCursor);
     }
     
@@ -98,28 +100,22 @@ public class Snow extends JFrame {
                 particles.add(new SnowParticle((int)(Math.random() * w), (int)(Math.random() * h),
                         (int)(Math.random() * MAX_RADIUS + 2), (int)(Math.random() * MAX_PARTICLES)));
         }
-
+        
         public void paintComponent(Graphics g) {
             setDoubleBuffered(true);
             g.setColor(skyColor);
             g.fillRect(0, 0, w, h);
             
             // https://docs.oracle.com/javase/tutorial/2d/advanced/quality.html
-            // Smooth Renderings Ninja Technique
-            Graphics2D g2d = (Graphics2D) g;
-            g2d.setRenderingHint(RenderingHints.KEY_ALPHA_INTERPOLATION, RenderingHints.VALUE_ALPHA_INTERPOLATION_QUALITY);
-            g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            g2d.setRenderingHint(RenderingHints.KEY_COLOR_RENDERING, RenderingHints.VALUE_COLOR_RENDER_QUALITY);
-            g2d.setRenderingHint(RenderingHints.KEY_DITHERING, RenderingHints.VALUE_DITHER_ENABLE);
-            g2d.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON);
-            g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
-            g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
-            g2d.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE);
+            if (USE_ANTIALIASING) {
+                Graphics2D g2d = (Graphics2D) g;
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            }
             
             // Lets Draw the particles on Screen
             for (SnowParticle p : particles) {
-                g.setColor(new Color(255, 255, 255, p.A));                
-                g2d.fillOval(p.X, p.Y, p.R, p.R);
+                g.setColor(new Color(255, 255, 255, p.A));
+                g.fillOval(p.X, p.Y, p.R, p.R);
             }
             
             // flushes out all the Graphic Memorys ==> Smooth Rendering
@@ -175,7 +171,7 @@ public class Snow extends JFrame {
         String firstArgument = (args.length > 0) ? args[0].toLowerCase().trim() : "";
         if (firstArgument.startsWith("/s") || args.length == 0) {
             // Run the Screen Saver.
-               new Snow();
+            new Snow();
         }
            if (firstArgument.startsWith("/p")) {
             // Preview Screen Saver as child of window <HWND>.
