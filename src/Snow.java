@@ -30,7 +30,8 @@ public class Snow extends JFrame {
     public Snow() {
         setTitle("Snow");
         setUndecorated(true);
-        setExtendedState(JFrame.MAXIMIZED_BOTH);
+        GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice()
+                .setFullScreenWindow(this); // for full screen in Linux
         setSize(Toolkit.getDefaultToolkit().getScreenSize());
         add(sky = new Sky());
         addMouseMotionListener(onMouseMoved());
@@ -167,7 +168,7 @@ public class Snow extends JFrame {
             // Run the Screen Saver.
             new Snow();
         }
-           if (firstArgument.startsWith("/p")) {
+        if (firstArgument.startsWith("/p")) {
             // Preview Screen Saver as child of window <HWND>.
             // Not support in Java.
             return;
