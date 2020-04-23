@@ -10,7 +10,7 @@
     <packaging>jar</packaging>
     
     <name>Snow</name>
-    <url>https://github.com/sergej-shugajev/ScreenSaverSnow</url>
+    <url>https://github.com/sergejshugajev/ScreenSaverSnow</url>
     <description>Snow (Screen Saver)</description>
     
     <properties>
