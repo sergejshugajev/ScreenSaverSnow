@@ -2,7 +2,7 @@
 Screen saver "Snow" in Java. Simple implementation of the movement of snowflakes.
 
 The program is compiled as an "almost" full screen saver for the Windows platform.
-![Project illustration](https://github.com/sergej-shugajev/ScreenSaverSnow/blob/master/preview.gif)
+![Project illustration](preview.gif)
 
 ## Principle of operation
 - A home screen is created in Swing.JFrame.
