@@ -11,8 +11,8 @@ import java.awt.event.*;
 import java.util.ArrayList;
 
 /**
- * Program       : Snow (Screen Saver)
- * Refactoring   : Sergej Shugajev (2020-04-17)
+ * Program       : Snow (Screen Saver) v0.1.3
+ * Refactoring   : Sergej Shugajev (2020-04-24)
  * Original idea : Deepak Monster
  *               : http://www.planet-source-code.com/vb/scripts/ShowCode.asp?txtCodeId=7180
  */
@@ -20,6 +20,10 @@ public class Snow extends JFrame {
     
     Sky sky;
     Timer timer;
+    final int TIMER_TICK = 1000 / 25; // 25 FPS 
+    long fpsLastTime = 0;
+    int fpsTick = 0, fpsTickSecond = 0;
+    final boolean VIEW_FPS = false;
     final boolean USE_ANTIALIASING = true; // render use or not antialiasing for draw
     final int MAX_PARTICLES = 150;
     final int MAX_RADIUS = 12;
@@ -42,10 +46,27 @@ public class Snow extends JFrame {
         (timer = timerRunner()).start();
     }
     
+    /** Get the FPS ticks per second */
+    public int getFpsTickSecond() { return fpsTickSecond; }
+    
+    /** Add one tick for FPS ticks (use: fpsLastTime, fpsTick, fpsTickSecond ) */
+    public void addFpsTick() {
+        long curTime = System.currentTimeMillis();;
+        if (curTime >= fpsLastTime + 1000 || fpsLastTime == 0) { // 1 second
+            fpsLastTime = curTime;
+            if (fpsTick < fpsTickSecond) fpsTickSecond = fpsTick;
+            fpsTick = 1;
+        } else {
+            fpsTick++;
+            if (fpsTick >= fpsTickSecond) fpsTickSecond = fpsTick;
+        }
+    }
+    
     public Timer timerRunner() {
-        return new Timer(40, new ActionListener() {
+        return new Timer(TIMER_TICK, new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 sky.changeParticlePositions();
+                addFpsTick();
                 sky.repaint();
                 if (isKeyPressed || isMouseMoved)
                     System.exit(0);
@@ -91,7 +112,7 @@ public class Snow extends JFrame {
         // it can delete the element inside the array.
         
         public Sky() {
-            setDoubleBuffered(false);
+            setDoubleBuffered(true);
             w = Snow.this.getWidth();
             h = Snow.this.getHeight();
             
@@ -103,7 +124,6 @@ public class Snow extends JFrame {
         }
         
         public void paintComponent(Graphics g) {
-            setDoubleBuffered(true);
             g.setColor(skyColor);
             g.fillRect(0, 0, w, h);
             
@@ -111,12 +131,18 @@ public class Snow extends JFrame {
             if (USE_ANTIALIASING) {
                 Graphics2D g2d = (Graphics2D) g;
                 g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
             }
             
             // Lets Draw the particles on Screen
             for (SnowParticle p : particles) {
                 g.setColor(new Color(255, 255, 255, p.A));
                 g.fillOval(p.X, p.Y, p.R, p.R);
+            }
+            
+            if (VIEW_FPS) {
+                g.setColor(Color.WHITE);
+                g.drawString("FPS: " + getFpsTickSecond(), 10, 18);
             }
             
             // flushes out all the Graphic Memorys ==> Smooth Rendering
@@ -127,7 +153,7 @@ public class Snow extends JFrame {
             final int BORDER = 15;
             angle += 0.01; // it is in Radians
             for (SnowParticle p : particles) {
-                p.Y += Math.cos(angle + p.D) + 2 + (p.R / 2);
+                p.Y += Math.round(Math.cos(angle + p.D)) + 2 + (p.R / 2);
                 p.X += Math.round(Math.sin(angle) * 2) + 1;
                 // just to create more randomness
                 if (p.Y > h) {
