@@ -20,7 +20,7 @@ public class Snow extends JFrame {
     
     Sky sky;
     Timer timer;
-    final int TIMER_TICK = 1000 / 25; // 25 FPS 
+    final int TIMER_TICK = 1000 / 25; // 25 FPS (or 60 FPS)
     long fpsLastTime = 0;
     int fpsTick = 0, fpsTickSecond = 0;
     final boolean VIEW_FPS = false;
@@ -33,6 +33,7 @@ public class Snow extends JFrame {
     
     public Snow() {
         setTitle("Snow");
+        setResizable(false);
         setUndecorated(true);
         GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice()
                 .setFullScreenWindow(this); // for full screen in Linux
@@ -51,11 +52,12 @@ public class Snow extends JFrame {
     
     /** Add one tick for FPS ticks (use: fpsLastTime, fpsTick, fpsTickSecond ) */
     public void addFpsTick() {
-        long curTime = System.currentTimeMillis();;
+        try { Thread.sleep(1); } catch (Exception e) {} // wait for update screen
+        long curTime = System.currentTimeMillis();
         if (curTime >= fpsLastTime + 1000 || fpsLastTime == 0) { // 1 second
             fpsLastTime = curTime;
             if (fpsTick < fpsTickSecond) fpsTickSecond = fpsTick;
-            fpsTick = 1;
+            fpsTick = 0;
         } else {
             fpsTick++;
             if (fpsTick >= fpsTickSecond) fpsTickSecond = fpsTick;
@@ -66,8 +68,8 @@ public class Snow extends JFrame {
         return new Timer(TIMER_TICK, new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 sky.changeParticlePositions();
-                addFpsTick();
                 sky.repaint();
+                addFpsTick(); // check fps after render (and wait for update screen) 
                 if (isKeyPressed || isMouseMoved)
                     System.exit(0);
             }
