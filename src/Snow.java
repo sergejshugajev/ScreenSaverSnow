@@ -8,116 +8,127 @@
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 
 /**
- * Program       : Snow (Screen Saver) v0.1.3
- * Refactoring   : Sergej Shugajev (2020-04-24)
+ * Program       : Snow (Screen Saver) v0.2.0
+ * Refactoring   : Sergej Shugajev (2020-04-29)
  * Original idea : Deepak Monster
  *               : http://www.planet-source-code.com/vb/scripts/ShowCode.asp?txtCodeId=7180
  */
 public class Snow extends JFrame {
     
+    Fps fps;
     Sky sky;
     Timer timer;
-    final int TIMER_TICK = 1000 / 25; // 25 FPS (or 60 FPS)
-    long fpsLastTime = 0;
-    int fpsTick = 0, fpsTickSecond = 0;
+    Container pane;
     final boolean VIEW_FPS = false;
     final boolean USE_ANTIALIASING = true; // render use or not antialiasing for draw
-    final int MAX_PARTICLES = 150;
+    final int MAX_PARTICLES = 300;
     final int MAX_RADIUS = 12;
-    
-    boolean isKeyPressed = false, isMouseMoved = false;
-    int oldMouseX = 0, oldMouseY = 0;
-    
+        
     public Snow() {
+        System.getProperties().setProperty("sun.java2d.opengl", "true"); // force ogl
         setTitle("Snow");
         setResizable(false);
+        setIgnoreRepaint(true);
         setUndecorated(true);
         GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice()
                 .setFullScreenWindow(this); // for full screen in Linux
         setSize(Toolkit.getDefaultToolkit().getScreenSize());
-        add(sky = new Sky());
-        addMouseMotionListener(onMouseMoved());
-        addKeyListener(onKeyPressed());
+        addMouseMotionListener(Events.onMouseMoved());
+        addKeyListener(Events.onKeyPressed());
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         hideCursor();
         setVisible(true);
-        (timer = timerRunner()).start();
+        fps = new Fps(25);
+        sky = new Sky(getSize());
+//        sky = new Sky(new Dimension(getSize().width/2, getSize().height/2)); // test w|h/2
+        pane = getContentPane(); // for render
+        (timer = timerRunner(fps.getTickMillis())).start(); // main loop and render
     }
     
-    /** Get the FPS ticks per second */
-    public int getFpsTickSecond() { return fpsTickSecond; }
-    
-    /** Add one tick for FPS ticks (use: fpsLastTime, fpsTick, fpsTickSecond ) */
-    public void addFpsTick() {
-        try { Thread.sleep(1); } catch (Exception e) {} // wait for update screen
-        long curTime = System.currentTimeMillis();
-        if (curTime >= fpsLastTime + 1000 || fpsLastTime == 0) { // 1 second
-            fpsLastTime = curTime;
-            if (fpsTick < fpsTickSecond) fpsTickSecond = fpsTick;
-            fpsTick = 0;
-        } else {
-            fpsTick++;
-            if (fpsTick >= fpsTickSecond) fpsTickSecond = fpsTick;
-        }
-    }
-    
-    public Timer timerRunner() {
-        return new Timer(TIMER_TICK, new ActionListener() {
+    public synchronized Timer timerRunner(int tick) {
+        return new Timer(tick, new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                sky.changeParticlePositions();
-                sky.repaint();
-                addFpsTick(); // check fps after render (and wait for update screen) 
-                if (isKeyPressed || isMouseMoved)
+                sky.movePositions(); // old render
+                sky.renderParticles();
+                pane.getGraphics().drawImage(sky.getImage(), 0, 0, null);
+                Toolkit.getDefaultToolkit().sync(); // synchronize screen                                    
+//                do sky.movePositions(); while (fps.isNeedAddUps()); // new render
+//                if (fps.isNeedPaint()) {
+//                    sky.renderParticles();
+//                    pane.getGraphics().drawImage(sky.getImage(), 0, 0, null);
+//                    Toolkit.getDefaultToolkit().sync(); // synchronize screen                                    
+//                }
+                fps.check(); // check fps after render (and wait for update screen) 
+                if (Events.isKeyPressed || Events.isMouseMoved)
                     System.exit(0);
             }
         });
     }
     
-    public KeyAdapter onKeyPressed() {
-        return new KeyAdapter() {
-            public void keyPressed(KeyEvent e) {
-                if (e.getID() == KeyEvent.KEY_PRESSED)
-                    isKeyPressed = true;
+    /** Check FPS and UPS rate (to use: -> isNeedAddUps(), isNeedPaint(), check() <- loop)
+     * @author Sergej Shugajev */
+    class Fps {
+        private int framerate = 60; // 25 FPS (or 60 FPS)
+        private final int MAX_FRAME_SKIPS = 5;
+        private final int ONE_SECOND_MILLIS = 1000;
+        private final long ONE_SECOND_NANO = 1000000000L;
+        private int upsTick, upsTickPerSecond, fpsTick, fpsTickPerSecond;
+        private long startTime = 0, timeDiff, sleepTime;
+        Fps () {}
+        Fps (int framerate) { this.framerate = framerate; }
+        private long getTimeNano() { return System.nanoTime(); }
+        public int getTickMillis() { return ONE_SECOND_MILLIS / this.framerate; }
+        private long getTickNano() { return ONE_SECOND_NANO / this.framerate; }
+        public int getUpsPerSecond() { return upsTickPerSecond - 1; }
+        public int getFpsPerSecond() { return fpsTickPerSecond - 1; }
+        public void start() { startTime = getTimeNano(); upsTick = 1; fpsTick = 1; }
+        public boolean isNeedAddUps() {
+            if (startTime == 0) start();
+            timeDiff = getTimeNano() - startTime;
+            if (timeDiff >= getTickNano() * upsTick && upsTick < this.framerate) {
+                upsTick++; return true;
+            } else return false;
+        }
+        public boolean isNeedPaint() {
+            if (startTime == 0) start();
+            timeDiff = getTimeNano() - startTime;
+            if (timeDiff < getTickNano() * upsTick || sleepTime >= getTickNano() * MAX_FRAME_SKIPS) {
+                sleepTime = 0; return true;
+            } else {
+                sleepTime += timeDiff; return false;
             }
-        };
-    }
-    
-    public MouseAdapter onMouseMoved() {
-        return new MouseAdapter() {
-            public void mouseMoved(MouseEvent e) {
-                if (oldMouseX == 0 || oldMouseY == 0) {
-                    oldMouseX = e.getX(); oldMouseY = e.getY();
-                    return;
-                }
-                if (oldMouseX != e.getX() || oldMouseY != e.getY())
-                    isMouseMoved = true;
+        }
+        public void check() {
+            try { Thread.sleep(1); } catch (Exception e) {} // wait for update screen
+            if (startTime == 0) start();
+            timeDiff = getTimeNano() - startTime;
+            if (timeDiff >= ONE_SECOND_NANO) {
+                upsTickPerSecond = upsTick; fpsTickPerSecond = fpsTick;
+                start();
+            } else {
+                upsTick++;
+                if (sleepTime == 0) fpsTick++;
             }
-        };
+        }
     }
-    
-    public void hideCursor() {
-        final Toolkit tk = getToolkit();
-        final Cursor hidenCursor = tk.createCustomCursor(tk.getImage(""), new Point(), "hidenCursor");
-        this.setCursor(hidenCursor);
-    }
-    
-    class Sky extends JComponent {
+        
+    class Sky {
         Color skyColor = new Color(107, 146, 185); // almost sky color
         int w, h; // width and height of screen
         float angle = 0;
+        BufferedImage buffer; // shadow image for render
         
         ArrayList<SnowParticle> particles; 
         // dint use array of SnowParticle objects because ArrayList has the special property which 
-        // it can delete the element inside the array.
+        // it can delete the element inside the array        
         
-        public Sky() {
-            setDoubleBuffered(true);
-            w = Snow.this.getWidth();
-            h = Snow.this.getHeight();
-            
+        public Sky(Dimension d) {
+            w = d.width; h = d.height;            
+            buffer = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
             // just storing some default random values for particles
             particles = new ArrayList<SnowParticle>();
             for(int i = 0; i < MAX_PARTICLES; i++)
@@ -125,33 +136,33 @@ public class Snow extends JFrame {
                         (int)(Math.random() * MAX_RADIUS + 2), (int)(Math.random() * MAX_PARTICLES)));
         }
         
-        public void paintComponent(Graphics g) {
+        /** Shadow screen for rendering */
+        public BufferedImage getImage() { return buffer; }
+        
+        /** Render snowflakes on the shadow screen */
+        public void renderParticles() {
+            Graphics2D g = (Graphics2D) buffer.getGraphics();
             g.setColor(skyColor);
             g.fillRect(0, 0, w, h);
-            
             // https://docs.oracle.com/javase/tutorial/2d/advanced/quality.html
             if (USE_ANTIALIASING) {
                 Graphics2D g2d = (Graphics2D) g;
                 g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
                 g2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
             }
-            
-            // Lets Draw the particles on Screen
+            // Lets Draw the particles on Shadow Screen
             for (SnowParticle p : particles) {
                 g.setColor(new Color(255, 255, 255, p.A));
                 g.fillOval(p.X, p.Y, p.R, p.R);
             }
-            
             if (VIEW_FPS) {
                 g.setColor(Color.WHITE);
-                g.drawString("FPS: " + getFpsTickSecond(), 10, 18);
+                g.drawString("FPS/UPS: " + fps.getFpsPerSecond() + "/" + fps.getUpsPerSecond(), 10, 18);
             }
-            
-            // flushes out all the Graphic Memorys ==> Smooth Rendering
-            Toolkit.getDefaultToolkit().sync();
         }
         
-        public void changeParticlePositions() {
+        /** Move the position of the snowflakes (in ArrayList)  */
+        public void movePositions() {
             final int BORDER = 15;
             angle += 0.01; // it is in Radians
             for (SnowParticle p : particles) {
@@ -181,15 +192,48 @@ public class Snow extends JFrame {
                 if (this.A > 255) this.A = 255;
             }
         }
-        
     }
+    
+    /** Application events (key, mouse) */
+    static class Events {
+        static public boolean isKeyPressed = false, isMouseMoved = false;
+        static int oldMouseX = 0, oldMouseY = 0;
+        
+        static public KeyAdapter onKeyPressed() {
+            return new KeyAdapter() {
+                public void keyPressed(KeyEvent e) {
+                    if (e.getID() == KeyEvent.KEY_PRESSED)
+                        isKeyPressed = true;
+                }
+            };
+        }
+        
+        static public MouseAdapter onMouseMoved() {
+            return new MouseAdapter() {
+                public void mouseMoved(MouseEvent e) {
+                    if (oldMouseX == 0 || oldMouseY == 0) {
+                        oldMouseX = e.getX(); oldMouseY = e.getY();
+                        return;
+                    }
+                    if (oldMouseX != e.getX() || oldMouseY != e.getY())
+                        isMouseMoved = true;
+                }
+            };
+        }
+    }
+    
+    /** Create hidden cursor and hide mouse */
+    public void hideCursor() {
+        final Toolkit tk = getToolkit();
+        final Cursor hidenCursor = tk.createCustomCursor(tk.getImage(""), new Point(), "hidenCursor");
+        this.setCursor(hidenCursor);
+    }    
     
     public static void main(String args[]) {
         // https://support.microsoft.com/en-us/help/182383/info-screen-saver-command-line-arguments
-                
         try {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-         } catch (Exception e) {}
+        } catch (Exception e) {}
         
         String firstArgument = (args.length > 0) ? args[0].toLowerCase().trim() : "";
         if (firstArgument.startsWith("/s") || args.length == 0) {
@@ -206,7 +250,5 @@ public class Snow extends JFrame {
             String infoMessage = "This screen-save does not have configurable settings.";
             JOptionPane.showMessageDialog(null, infoMessage, "Configuration", JOptionPane.INFORMATION_MESSAGE);
         }
-        
     }
-    
 }
