@@ -55,13 +55,13 @@ public class Snow extends JFrame {
                 sky.movePositions(); // old render
                 sky.renderParticles();
                 pane.getGraphics().drawImage(sky.getImage(), 0, 0, null);
-                Toolkit.getDefaultToolkit().sync(); // synchronize screen                                    
-//                do sky.movePositions(); while (fps.isNeedAddUps()); // new render
-//                if (fps.isNeedPaint()) {
-//                    sky.renderParticles();
-//                    pane.getGraphics().drawImage(sky.getImage(), 0, 0, null);
-//                    Toolkit.getDefaultToolkit().sync(); // synchronize screen                                    
-//                }
+                Toolkit.getDefaultToolkit().sync(); // synchronize screen /**/
+/*                do sky.movePositions(); while (fps.isNeedAddUps()); // new render
+                if (fps.isNeedPaint()) {
+                    sky.renderParticles();
+                    pane.getGraphics().drawImage(sky.getImage(), 0, 0, null);
+                    Toolkit.getDefaultToolkit().sync(); // synchronize screen
+                } /**/
                 fps.check(); // check fps after render (and wait for update screen) 
                 if (Events.isKeyPressed || Events.isMouseMoved)
                     System.exit(0);
@@ -115,7 +115,7 @@ public class Snow extends JFrame {
             }
         }
     }
-        
+    
     class Sky {
         Color skyColor = new Color(107, 146, 185); // almost sky color
         int w, h; // width and height of screen
@@ -123,8 +123,8 @@ public class Snow extends JFrame {
         BufferedImage buffer; // shadow image for render
         
         ArrayList<SnowParticle> particles; 
-        // dint use array of SnowParticle objects because ArrayList has the special property which 
-        // it can delete the element inside the array        
+        // dint use array of SnowParticle objects because ArrayList has the special property which
+        // it can delete the element inside the array
         
         public Sky(Dimension d) {
             w = d.width; h = d.height;            
@@ -161,7 +161,7 @@ public class Snow extends JFrame {
             }
         }
         
-        /** Move the position of the snowflakes (in ArrayList)  */
+        /** Move the position of the snowflakes (in ArrayList) */
         public void movePositions() {
             final int BORDER = 15;
             angle += 0.01; // it is in Radians
