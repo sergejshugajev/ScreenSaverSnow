@@ -12,7 +12,7 @@ import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 
 /**
- * Program       : Snow (Screen Saver) v0.2.0
+ * Program       : Snow (Screen Saver) v0.2.1
  * Refactoring   : Sergej Shugajev (2020-04-29)
  * Original idea : Deepak Monster
  *               : http://www.planet-source-code.com/vb/scripts/ShowCode.asp?txtCodeId=7180
@@ -56,7 +56,7 @@ public class Snow extends JFrame {
                 sky.renderParticles();
                 pane.getGraphics().drawImage(sky.getImage(), 0, 0, null);
                 Toolkit.getDefaultToolkit().sync(); // synchronize screen /**/
-/*                do sky.movePositions(); while (fps.isNeedAddUps()); // new render
+/*                do sky.movePositions(); while (fps.isNeedUps()); // new render
                 if (fps.isNeedPaint()) {
                     sky.renderParticles();
                     pane.getGraphics().drawImage(sky.getImage(), 0, 0, null);
@@ -69,49 +69,46 @@ public class Snow extends JFrame {
         });
     }
     
-    /** Check FPS and UPS rate (to use: -> isNeedAddUps(), isNeedPaint(), check() <- loop)
+    /** Check FPS and UPS rate (to use: -> isNeedUps(), isNeedPaint(), check() <- loop)
      * @author Sergej Shugajev */
     class Fps {
-        private int framerate = 60; // 25 FPS (or 60 FPS)
+        private final int ONE_SECOND = 1000;
         private final int MAX_FRAME_SKIPS = 5;
-        private final int ONE_SECOND_MILLIS = 1000;
-        private final long ONE_SECOND_NANO = 1000000000L;
+        private int framerate = 60; // 25 FPS (or 60 FPS)
+        private float tickdelay = (float) ONE_SECOND / framerate;
         private int upsTick, upsTickPerSecond, fpsTick, fpsTickPerSecond;
-        private long startTime = 0, timeDiff, sleepTime;
+        private long startTime = 0, timeDiff;
         Fps () {}
-        Fps (int framerate) { this.framerate = framerate; }
-        private long getTimeNano() { return System.nanoTime(); }
-        public int getTickMillis() { return ONE_SECOND_MILLIS / this.framerate; }
-        private long getTickNano() { return ONE_SECOND_NANO / this.framerate; }
-        public int getUpsPerSecond() { return upsTickPerSecond - 1; }
-        public int getFpsPerSecond() { return fpsTickPerSecond - 1; }
-        public void start() { startTime = getTimeNano(); upsTick = 1; fpsTick = 1; }
-        public boolean isNeedAddUps() {
+        Fps (int framerate) { this.framerate = framerate; tickdelay = (float) ONE_SECOND / framerate; }
+        private long getTime() { return System.currentTimeMillis(); }
+        public int getTickMillis() { return (int) tickdelay; }
+        public int getUpsPerSecond() { return upsTickPerSecond; }
+        public int getFpsPerSecond() { return fpsTickPerSecond; }
+        public void start() { startTime = getTime(); upsTick = 1; fpsTick = 1; }
+        public boolean isNeedUps() {
             if (startTime == 0) start();
-            timeDiff = getTimeNano() - startTime;
-            if (timeDiff >= getTickNano() * upsTick && upsTick < this.framerate) {
+            timeDiff = getTime() - startTime;
+            if (timeDiff >= tickdelay * upsTick && upsTick < framerate) {
                 upsTick++; return true;
             } else return false;
         }
         public boolean isNeedPaint() {
             if (startTime == 0) start();
-            timeDiff = getTimeNano() - startTime;
-            if (timeDiff < getTickNano() * upsTick || sleepTime >= getTickNano() * MAX_FRAME_SKIPS) {
-                sleepTime = 0; return true;
-            } else {
-                sleepTime += timeDiff; return false;
-            }
+            timeDiff = getTime() - startTime;
+            if (timeDiff < tickdelay * upsTick
+                    || (timeDiff - (tickdelay * upsTick)) >= tickdelay * MAX_FRAME_SKIPS)
+                return true;
+            else return false;
         }
         public void check() {
             try { Thread.sleep(1); } catch (Exception e) {} // wait for update screen
             if (startTime == 0) start();
-            timeDiff = getTimeNano() - startTime;
-            if (timeDiff >= ONE_SECOND_NANO) {
+            timeDiff = getTime() - startTime;
+            if (timeDiff >= tickdelay * framerate || upsTick >= framerate) {
                 upsTickPerSecond = upsTick; fpsTickPerSecond = fpsTick;
-                start();
+                startTime -= timeDiff; // restart
             } else {
-                upsTick++;
-                if (sleepTime == 0) fpsTick++;
+                upsTick++; fpsTick++;
             }
         }
     }
