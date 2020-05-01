@@ -12,7 +12,7 @@ import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 
 /**
- * Program       : Snow (Screen Saver) v0.2.1
+ * Program       : Snow (Screen Saver) v0.2.2
  * Refactoring   : Sergej Shugajev (2020-04-29)
  * Original idea : Deepak Monster
  *               : http://www.planet-source-code.com/vb/scripts/ShowCode.asp?txtCodeId=7180
@@ -27,14 +27,17 @@ public class Snow extends JFrame {
     final boolean USE_ANTIALIASING = true; // render use or not antialiasing for draw
     final int MAX_PARTICLES = 300;
     final int MAX_RADIUS = 12;
-        
+    
+    final boolean isDebug = java.lang.management.ManagementFactory.getRuntimeMXBean().
+            getInputArguments().toString().indexOf("-agentlib:jdwp") > 0; // for test in debug
+    
     public Snow() {
         System.getProperties().setProperty("sun.java2d.opengl", "true"); // force ogl
         setTitle("Snow");
         setResizable(false);
         setIgnoreRepaint(true);
         setUndecorated(true);
-        GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice()
+        if (!isDebug) GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice()
                 .setFullScreenWindow(this); // for full screen in Linux
         setSize(Toolkit.getDefaultToolkit().getScreenSize());
         addMouseMotionListener(Events.onMouseMoved());
@@ -72,43 +75,48 @@ public class Snow extends JFrame {
     /** Check FPS and UPS rate (to use: -> isNeedUps(), isNeedPaint(), check() <- loop)
      * @author Sergej Shugajev */
     class Fps {
-        private final int ONE_SECOND = 1000;
+        private final double ONE_SECOND = 1000;
         private final int MAX_FRAME_SKIPS = 5;
         private int framerate = 60; // 25 FPS (or 60 FPS)
-        private float tickdelay = (float) ONE_SECOND / framerate;
+        private double tickdelay = ONE_SECOND / framerate;
         private int upsTick, upsTickPerSecond, fpsTick, fpsTickPerSecond;
-        private long startTime = 0, timeDiff;
+        private double startTime = 0, timeDiff, upsLimit;
+        private boolean isPaint;
         Fps () {}
-        Fps (int framerate) { this.framerate = framerate; tickdelay = (float) ONE_SECOND / framerate; }
-        private long getTime() { return System.currentTimeMillis(); }
+        Fps (int framerate) { this.framerate = framerate; tickdelay = ONE_SECOND / framerate; }
+        private double getTime() { return System.currentTimeMillis(); }
         public int getTickMillis() { return (int) tickdelay; }
         public int getUpsPerSecond() { return upsTickPerSecond; }
         public int getFpsPerSecond() { return fpsTickPerSecond; }
-        public void start() { startTime = getTime(); upsTick = 1; fpsTick = 1; }
-        public boolean isNeedUps() {
+        public void start() {
+            if (startTime == 0) startTime = getTime();
+            upsTick = 1; fpsTick = 1; isPaint = true;
+        }
+        private void calculate() {
             if (startTime == 0) start();
             timeDiff = getTime() - startTime;
-            if (timeDiff >= tickdelay * upsTick && upsTick < framerate) {
-                upsTick++; return true;
-            } else return false;
+            upsLimit = tickdelay * upsTick;
+        }
+        public boolean isNeedUps() {
+            calculate();
+            boolean isNeed = (timeDiff >= upsLimit && upsTick < framerate);
+            if (isNeed) upsTick++;
+            return isNeed;
         }
         public boolean isNeedPaint() {
-            if (startTime == 0) start();
-            timeDiff = getTime() - startTime;
-            if (timeDiff < tickdelay * upsTick
-                    || (timeDiff - (tickdelay * upsTick)) >= tickdelay * MAX_FRAME_SKIPS)
-                return true;
-            else return false;
+            calculate();
+            isPaint = (timeDiff < upsLimit || (timeDiff - upsLimit) >= tickdelay * MAX_FRAME_SKIPS);
+            return isPaint;
         }
         public void check() {
             try { Thread.sleep(1); } catch (Exception e) {} // wait for update screen
-            if (startTime == 0) start();
-            timeDiff = getTime() - startTime;
-            if (timeDiff >= tickdelay * framerate || upsTick >= framerate) {
+            calculate();
+            if (timeDiff >= ONE_SECOND || upsTick >= framerate) {
                 upsTickPerSecond = upsTick; fpsTickPerSecond = fpsTick;
-                startTime -= timeDiff; // restart
+                startTime = 0; start(); // restart
             } else {
-                upsTick++; fpsTick++;
+                upsTick++;
+                if (isPaint) fpsTick++;
             }
         }
     }
