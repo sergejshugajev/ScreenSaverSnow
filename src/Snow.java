@@ -12,8 +12,8 @@ import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 
 /**
- * Program       : Snow (Screen Saver) v0.2.2
- * Refactoring   : Sergej Shugajev (2020-04-29)
+ * Program       : Snow (Screen Saver) v0.2.3
+ * Refactoring   : Sergej Shugajev (2020-05-02)
  * Original idea : Deepak Monster
  *               : http://www.planet-source-code.com/vb/scripts/ShowCode.asp?txtCodeId=7180
  */
@@ -24,6 +24,7 @@ public class Snow extends JFrame {
     Timer timer;
     Container pane;
     final boolean VIEW_FPS = false;
+//    final boolean OLD_RENDER = true; // new render holds FPS and drops frame
     final boolean USE_ANTIALIASING = true; // render use or not antialiasing for draw
     final int MAX_PARTICLES = 300;
     final int MAX_RADIUS = 12;
@@ -80,7 +81,7 @@ public class Snow extends JFrame {
         private int framerate = 60; // 25 FPS (or 60 FPS)
         private double tickdelay = ONE_SECOND / framerate;
         private int upsTick, upsTickPerSecond, fpsTick, fpsTickPerSecond;
-        private double startTime = 0, timeDiff, upsLimit;
+        private double startTime = 0, timeDiff, upsLimit, timePaint;
         private boolean isPaint;
         Fps () {}
         Fps (int framerate) { this.framerate = framerate; tickdelay = ONE_SECOND / framerate; }
@@ -90,11 +91,14 @@ public class Snow extends JFrame {
         public int getFpsPerSecond() { return fpsTickPerSecond; }
         public void start() {
             if (startTime == 0) startTime = getTime();
-            upsTick = 1; fpsTick = 1; isPaint = true;
+            upsTick = 1; fpsTick = 1; isPaint = true; timePaint = 0;
         }
         private void calculate() {
-            if (startTime == 0) start();
-            timeDiff = getTime() - startTime;
+            do {
+                if (startTime == 0) start();
+                timeDiff = getTime() - startTime;
+                if (timeDiff < 0) startTime = 0;    /* event for Timer reset */
+            } while (timeDiff < 0);
             upsLimit = tickdelay * upsTick;
         }
         public boolean isNeedUps() {
@@ -105,15 +109,19 @@ public class Snow extends JFrame {
         }
         public boolean isNeedPaint() {
             calculate();
-            isPaint = (timeDiff < upsLimit || (timeDiff - upsLimit) >= tickdelay * MAX_FRAME_SKIPS);
+            isPaint = (timeDiff < upsLimit || (timeDiff - upsLimit) >= tickdelay * MAX_FRAME_SKIPS)
+                            && timePaint < upsLimit;
+            if (isPaint) timePaint = upsLimit;      /* for no repaint frame */
             return isPaint;
         }
         public void check() {
             try { Thread.sleep(1); } catch (Exception e) {} // wait for update screen
             calculate();
+//                    System.out.format("U%02d,F%02d,S:%7.2f;%s",   /* testing for debug */
+//                        upsTick, fpsTick, upsLimit-timeDiff, (timeDiff >= ONE_SECOND)?'\n':"");
             if (timeDiff >= ONE_SECOND || upsTick >= framerate) {
                 upsTickPerSecond = upsTick; fpsTickPerSecond = fpsTick;
-                startTime = 0; start(); // restart
+                startTime = 0; // restart
             } else {
                 upsTick++;
                 if (isPaint) fpsTick++;
